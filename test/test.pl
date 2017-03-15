@@ -36,6 +36,7 @@ test.pl [options]
 
  Test Options:
    --no-cleanup         don't cleaup after the last test is complete - useful for debugging
+   --wait               wait for user input between tests
 
  Configuration Options:
    --pgsql-bin          path to the psql executables (defaults to /usr/local/pgsql/bin)
