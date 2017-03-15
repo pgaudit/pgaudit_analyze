@@ -38,7 +38,7 @@ Regression tests are located at test/test.pl. You may need to set `--pgsql-bin` 
 
 A `Vagrantfile` has been included in the test directory which gives the exact steps needed to get the regression rests running on `CentOS 7`. After logging on to the `vagrant` box simply run:
 ```
-/pgaudit/analyze/test/test.pl
+/pgaudit_analyze/test/test.pl
 ```
 
 ## Caveats

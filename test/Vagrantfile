@@ -21,11 +21,11 @@ Vagrant.configure(2) do |config|
             yum -y install bison
             yum -y install flex
             yum -y install perl-DBD-Pg
-            sudo -u vagrant git clone https://github.com/postgres/postgres.git -b REL9_5_STABLE postgres
+            sudo -u vagrant git clone https://github.com/postgres/postgres.git -b REL9_6_STABLE postgres
 
             cd postgres
             sudo -u vagrant ./configure
-            sudo -u vagrant make -j 4 -s install
+            sudo -u vagrant make -s
             make -s install
 
             cd contrib
@@ -44,5 +44,5 @@ Vagrant.configure(2) do |config|
     config.vm.synced_folder ".", "/vagrant", disabled: true
 
     # Mount pgaudit path for testing
-    config.vm.synced_folder "../..", "/pgaudit"
+    config.vm.synced_folder "..", "/pgaudit_analyze"
 end
