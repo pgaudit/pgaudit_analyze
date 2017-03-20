@@ -495,8 +495,6 @@ sub logWrite
 ####################################################################################################################################
 # auditWrite
 ####################################################################################################################################
-my $oAuditCSV = new PgAudit::CSV({binary => 1, empty_is_undef => 1});
-
 sub auditWrite
 {
     my $strSessionId = shift;
@@ -506,6 +504,7 @@ sub auditWrite
 
     if ($strMessage =~ /^AUDIT\:\ /)
     {
+        my $oAuditCSV = new PgAudit::CSV({binary => 1, empty_is_undef => 1});
         $oAuditCSV->parse(substr($strMessage, 7));
         my @stryRow = $oAuditCSV->fields();
         my $lStatementId = $stryRow[AUDIT_FIELD_STATEMENT_ID];
@@ -717,7 +716,6 @@ while(!$bDone)
         sleep(5);
 
         # Reset everything and start again
-        undef($oAuditCSV);
         undef(%oDbHash);
         undef(%oSessionHash);
         undef(%oLogonHash);
