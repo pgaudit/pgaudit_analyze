@@ -631,7 +631,7 @@ my $strNextLogFile = nextLogFile($strLogPath);
 
 # Open log file
 open(my $hLog, '>', $strLogOutFile)
-    or confess "Unable to open pgAudit Analyze log file $strLogOutFile: $!";
+    or confess "unable to open pgAudit Analyze log file $strLogOutFile: $!";
 
 # Daemonize the process
 daemonInit()
@@ -639,7 +639,7 @@ daemonInit()
 
 while(!$bDone)
 {
-    # If the audit CSV object is undefined (e.g. reset when if an error occurred) then redefine it
+    # If the audit CSV object is undefined (e.g. reset if an error occurred) then redefine it
     if (!defined($oAuditCSV))
     {
         $oAuditCSV = new PgAudit::CSV({binary => 1, empty_is_undef => 1});
