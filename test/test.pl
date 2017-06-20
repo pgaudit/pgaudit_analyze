@@ -722,6 +722,18 @@ $strSql =
 
 pgQueryTest($strSql);
 
+# Verify that correct error is thrown when unable to open log file
+#-------------------------------------------------------------------------------
+&log("\nTEST: Verify 'unable to open pgAudit Analyze log file'\n");
+eval
+{
+    capture("${strBasePath}/bin/pgaudit_analyze --log-file=/var/log/pgaudit_analyze.log ${strTestPath}/pg_log");
+};
+if ($@)
+{
+    &log("TEST PASSED - Verify 'unable to open pgAudit Analyze log file'");
+}
+
 &log(undef, undef, true);
 
 # Cleanup
