@@ -495,7 +495,7 @@ sub logWrite
 ####################################################################################################################################
 # auditWrite
 ####################################################################################################################################
-my $oAuditCSV = new PgAudit::CSV({binary => 1, empty_is_undef => 1});
+my $oAuditCSV;
 
 sub auditWrite
 {
@@ -639,6 +639,12 @@ daemonInit()
 
 while(!$bDone)
 {
+    # If the audit CSV object is undefined (e.g. reset if an error occurred or never created) then create it
+    if (!defined($oAuditCSV))
+    {
+        $oAuditCSV = new PgAudit::CSV({binary => 1, empty_is_undef => 1});
+    }
+
     eval
     {
         if (!defined($strNextLogFile))
