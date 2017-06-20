@@ -59,7 +59,7 @@ use constant
 ####################################################################################################################################
 # Command line parameters
 ####################################################################################################################################
-my $strPgSqlBin = '/usr/local/pgsql/bin';       # Path of PG binaries to use for this test
+my $strPgSqlBin = '/usr/pgsql-9.6/bin';         # Path of PG binaries to use for this test
 my $strTestPath = 'test';                       # Path where testing will occur
 my $strUser = getpwuid($>);                     # PG user name
 my $strHost = '/tmp';                           # PG default host
@@ -406,7 +406,7 @@ sub pgPsql
     my $strOption = shift;
     my $bSuppressError = shift;
 
-    commandExecute("${strPgSqlBin}/psql -p ${iPort} ${strOption} ${strDatabase}", $bSuppressError);
+    commandExecute("${strPgSqlBin}/psql -h ${strHost} -p ${iPort} ${strOption} ${strDatabase}", $bSuppressError);
 }
 
 ####################################################################################################################################

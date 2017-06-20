@@ -34,12 +34,11 @@ pgAudit Analyze is intended to be run as a daemon process.
 
 ## Testing
 
-Regression tests are located at test/test.pl. You may need to set `--pgsql-bin` depending on your local configuration.
-
 A `Vagrantfile` has been included in the test directory which gives the exact steps needed to get the regression rests running on `CentOS 7`. After logging on to the `vagrant` box simply run:
 ```
 /pgaudit_analyze/test/test.pl
 ```
+Regression tests will be run on PostgreSQL 9.6 by default. Specify `--pgsql-bin=/usr/pgsql-9.5/bin` to run tests on PostgreSQL 9.5.
 
 ## Caveats
 
