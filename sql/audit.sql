@@ -4,6 +4,9 @@
 -- Make sure that errors are detected and not automatically rolled back
 \set ON_ERROR_ROLLBACK off
 
+-- wrap in transaction block in the event AUTOCOMMIT is off
+BEGIN;
+
 -- Create pgaudit extension
 CREATE EXTENSION IF NOT EXISTS pgaudit;
 
@@ -254,3 +257,5 @@ select session.session_id,
        inner join pgaudit.audit_statement
             on audit_statement.session_id = audit_substatement_detail.session_id
            and audit_statement.statement_id = audit_substatement_detail.statement_id;
+
+COMMIT;
