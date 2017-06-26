@@ -39,6 +39,10 @@ begin
 
     if not pg_temp.role_exists('pgaudit') then
         create user pgaudit in role pgaudit_etl;
+
+        -- Disable audit logging for the pgaudit user
+        alter role pgaudit set pgaudit.log = 'none';
+        alter role pgaudit set pgaudit.role = '';
     end if;
 end $$;
 
