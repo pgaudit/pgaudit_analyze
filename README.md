@@ -38,7 +38,7 @@ A `Vagrantfile` has been included in the test directory which gives the exact st
 ```
 /pgaudit_analyze/test/test.pl
 ```
-Regression tests will be run on PostgreSQL 9.6 by default. Specify `--pgsql-bin=/usr/pgsql-9.5/bin` to run tests on PostgreSQL 9.5.
+Regression tests will be run on PostgreSQL 10 by default. Specify `--pgsql-bin=/usr/pgsql-9.6/bin` to run tests on PostgreSQL 9.6 and use the same pattern for 9.5 testing.
 
 ## Caveats
 

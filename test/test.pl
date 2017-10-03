@@ -59,8 +59,9 @@ use constant
 ####################################################################################################################################
 # Command line parameters
 ####################################################################################################################################
-my $strPgSqlBin = '/usr/pgsql-9.6/bin';         # Path of PG binaries to use for this test
+my $strPgSqlBin = '/usr/pgsql-10/bin';          # Path of PG binaries to use for this test
 my $strTestPath = 'test';                       # Path where testing will occur
+my $strPgLogPath = 'log';                       # Path where pg logs will be stored
 my $strUser = getpwuid($>);                     # PG user name
 my $strHost = '/tmp';                           # PG default host
 my $strDatabase = 'postgres';                   # PG database
@@ -386,6 +387,7 @@ sub pgStart
                    " -c log_error_verbosity=verbose" .
                    " -c log_connections=on" .
                    " -c log_destination=csvlog" .
+                   " -c log_directory=${strPgLogPath}" .
                    ($bNotice ? " -c pgaudit.log_level=notice" : '') .
                    " -c pgaudit.role=auditor" .
                    " -c logging_collector=on" .
@@ -429,7 +431,7 @@ pgPsql("-f ${strBasePath}/sql/audit.sql");
 # Start pgaudit_analyze
 my $pId = IPC::Open3::open3(undef, undef, undef,
                             "${strBasePath}/bin/pgaudit_analyze --port=${iPort} --socket-path=/tmp" .
-                            " --log-file=${strTestPath}/pgaudit_analyze.log ${strTestPath}/pg_log");
+                            " --log-file=${strTestPath}/pgaudit_analyze.log ${strTestPath}/${strPgLogPath}");
 
 use constant LOCALHOST => '127.0.0.1';
 
@@ -727,7 +729,7 @@ pgQueryTest($strSql);
 &log("\nTEST: Verify 'unable to open pgAudit Analyze log file'\n");
 eval
 {
-    capture("${strBasePath}/bin/pgaudit_analyze --log-file=/var/log/pgaudit_analyze.log ${strTestPath}/pg_log");
+    capture("${strBasePath}/bin/pgaudit_analyze --log-file=/var/log/pgaudit_analyze.log ${strTestPath}/${strPgLogPath}");
 };
 if ($@)
 {
