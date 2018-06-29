@@ -44,7 +44,7 @@ pgAudit Analyze is intended to be run as a daemon process.
 
 pgAudit Analyze is intended to be run as a daemon process.
 ```
-./pgaudit_analyze --daemon --port=5432 --socket-path=localhost --log-file=/path/to/pgaudit_analyze.log --user=pgaudit_etl --log-server=audit_log_server --log-database=pgaudit --log-port=5432 /path/to/log/files
+./pgaudit_analyze --daemon --port=5432 --socket-path=localhost --log-file=/path/to/pgaudit_analyze.log --user=pgaudit_etl --log-server=audit_log_server --log-database=pgaudit --log-port=5432 --log-server-name=local_server_name /path/to/log/files
 ```
 
 ## Testing
