@@ -28,14 +28,17 @@ use PgAudit::Wait;
 pgaudit_analyze [options] <pg-log-path>
 
  Configuration Options:
-   --daemon             run as a daemon (consider running under upstart or systemctl)
-   --port               port that PostgreSQL is running on (defaults to 5432)
-   --socket-path        socket directory used by PostgreSQL (default to system default directory)
-   --log-file           location of the log file for pgaudit_analyze (defaults to /var/log/pgaudit_analyze.log)
-   --user               specify postgres user instead of using pgaudit_analyze invoker
+   --daemon               run as a daemon (consider running under upstart or systemctl)
+   --port                 port that PostgreSQL is running on (defaults to 5432)
+   --socket-path          socket directory used by PostgreSQL (default to system default directory)
+   --log-file             location of the log file for pgaudit_analyze (defaults to /var/log/pgaudit_analyze.log)
+   --user                 specify postgres user instead of using pgaudit_analyze invoker
+   --log-server           specify host name for the logging server (default to --socket-path)
+   --log-database         specifyc database name for the logging server (default to same database name in the audit entries)
+   --log-port             specify port for the logging server (default to --port)
 
  General Options:
-   --help               display usage and exit
+   --help                 display usage and exit
 =cut
 
 ####################################################################################################################################
@@ -121,6 +124,10 @@ my $iPort = 5432;
 my $strSocketPath;
 my $strLogOutFile = '/var/log/pgaudit_analyze.log';
 my $strDbUser = getpwuid($<);
+my $strUseCenteralServer = false;
+my $strLogServer;
+my $strLogDatabase;
+my $iLogPort;
 
 
 GetOptions ('help' => \$bHelp,
@@ -128,6 +135,10 @@ GetOptions ('help' => \$bHelp,
             'port=s' => \$iPort,
             'socket-path=s' => \$strSocketPath,
             'log-file=s' => \$strLogOutFile,
+            'use-centeral-server=s' => \$strUseCenteralServer,
+            'log-server=s' => \$strLogServer,
+            'log-database=s' => \$strLogDatabase,
+            'log-port=s' => \$iLogPort,
             'user=s' => \$strDbUser)
     or pod2usage(2);
 
@@ -164,10 +175,11 @@ sub databaseGet
 
     # Connect to the database
     $oDbHash{$strDatabaseName}{hDb} = DBI->connect(
-        "dbi:Pg:dbname=${strDatabaseName};port=${iPort};" .
-        (defined($strSocketPath) ? "host=${strSocketPath}" : ''),
+        "dbi:Pg:dbname=" . (defined($strLogDatabase) ? ${strLogDatabase} : ${strDatabaseName}) . " ;port=" . (defined($iLogPort) ? ${iLogPort} : ${iPort}) . ";" .
+        (defined($strLogServer) ? "host=${strLogServer}" : (defined($strSocketPath) ? "host=${strSocketPath}" : '')),
         $strDbUser, undef,
         {AutoCommit => 0, RaiseError => 1});
+    
 
     # Check for the audit schema to determine whether or not to log this database
     my $hSqlSchemaSelect = $oDbHash{$strDatabaseName}{hDb}->prepare(
@@ -177,7 +189,9 @@ sub databaseGet
 
     $oDbHash{$strDatabaseName}{hDb}->do("set session authorization ${strAuditUserName}");
 
-    $hSqlSchemaSelect->execute($strAuditSchemaName);
+    my $strSchemaName = (defined($strLogServer) ? "{$strLogServer}_{$strDatabaseName}" : strAuditSchemaName);
+
+    $hSqlSchemaSelect->execute($strSchemaName);
 
     $oDbHash{$strDatabaseName}{log} = ($hSqlSchemaSelect->fetchrow_array())[0] ? true : false;
     undef($hSqlSchemaSelect);
@@ -189,9 +203,9 @@ sub databaseGet
         undef($oDbHash{$strDatabaseName}{hDb});
         return false;
     }
-
+ 
     $oDbHash{$strDatabaseName}{hSqlSessionInsert} = $oDbHash{$strDatabaseName}{hDb}->prepare(
-        "insert into pgaudit.session (session_id, process_id, session_start_time, user_name, application_name,\n" .
+        "insert into ${strSchemaName}.session (session_id, process_id, session_start_time, user_name, application_name,\n" .
         "                             connection_from, state)\n" .
         "                     values (?, ?, ?, ?, ?, ?, ?)");
 
@@ -200,7 +214,7 @@ sub databaseGet
         "(\n" .
         "    select session_id,\n" .
         "           max(session_line_num) as session_line_num_max\n" .
-        "      from pgaudit.log_event\n" .
+        "      from ${strSchemaName}.log_event\n" .
         "     where session_id = ?\n" .
         "     group by session_id\n" .
         "),\n" .
@@ -209,7 +223,7 @@ sub databaseGet
         "    select session_id,\n" .
         "           max(statement_id) as statement_id_max,\n" .
         "           max(substatement_id) as substatement_id_max\n" .
-        "      from pgaudit.audit_substatement\n" .
+        "      from ${strSchemaName}.audit_substatement\n" .
         "     where session_id = ?\n" .
         "     group by session_id\n" .
         ")\n" .
@@ -218,7 +232,7 @@ sub databaseGet
         "       coalesce(session_line_num.session_line_num_max, 0) as session_line_num_max,\n" .
         "       coalesce(audit.statement_id_max, 0) as statement_id_max,\n" .
         "       coalesce(audit.substatement_id_max, 0) as substatement_id_max\n" .
-        " from pgaudit.session\n" .
+        " from ${strSchemaName}.session\n" .
         "      left outer join session_line_num\n" .
         "           on session_line_num.session_id = session.session_id\n" .
         "      left outer join audit\n" .
@@ -226,7 +240,7 @@ sub databaseGet
         " where session.session_id = ?");
 
     $oDbHash{$strDatabaseName}{hSqlSessionUpdate} = $oDbHash{$strDatabaseName}{hDb}->prepare(
-        "update pgaudit.session\n" .
+        "update ${strSchemaName}.session\n" .
         "   set application_name = ?\n" .
         " where session_id = ?");
 
@@ -235,15 +249,15 @@ sub databaseGet
         "       current_success,\n" .
         "       last_failure,\n" .
         "       failures_since_last_success\n".
-        "  from pgaudit.logon\n" .
+        "  from ${strSchemaName}.logon\n" .
         " where user_name = ?");
 
     $oDbHash{$strDatabaseName}{hSqlLogonInsert} = $oDbHash{$strDatabaseName}{hDb}->prepare(
-        "insert into pgaudit.logon (user_name, current_success, last_failure, failures_since_last_success)\n" .
+        "insert into ${strSchemaName}.logon (user_name, current_success, last_failure, failures_since_last_success)\n" .
         "                   values (?, ?, ?, ?)");
 
     $oDbHash{$strDatabaseName}{hSqlLogonUpdate} = $oDbHash{$strDatabaseName}{hDb}->prepare(
-        "update pgaudit.logon\n" .
+        "update ${strSchemaName}.logon\n" .
         "   set last_success = ?,\n" .
         "       current_success = ?,\n" .
         "       last_failure = ?,\n" .
@@ -251,13 +265,13 @@ sub databaseGet
         " where user_name = ?");
 
     $oDbHash{$strDatabaseName}{hSqlLogInsert} = $oDbHash{$strDatabaseName}{hDb}->prepare(
-        "insert into pgaudit.log_event (session_id, log_time, session_line_num, command, error_severity, sql_state_code,\n" .
+        "insert into ${strSchemaName}.log_event (session_id, log_time, session_line_num, command, error_severity, sql_state_code,\n" .
         "                               virtual_transaction_id, transaction_id, message, detail, hint, query, query_pos,\n" .
         "                               internal_query, internal_query_pos, context, location)\n" .
         "                       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
     $oDbHash{$strDatabaseName}{hSqlLogUpdate} = $oDbHash{$strDatabaseName}{hDb}->prepare(
-        "update pgaudit.log_event\n" .
+        "update ${strSchemaName}.log_event\n" .
         "   set user_name = ?,\n" .
         "       database_name = ?,\n" .
         "       connection_from = ?,\n" .
@@ -265,22 +279,22 @@ sub databaseGet
         " where id = ?");
 
     $oDbHash{$strDatabaseName}{hSqlAuditStmtInsert} = $oDbHash{$strDatabaseName}{hDb}->prepare(
-        "insert into pgaudit.audit_statement (session_id, statement_id)\n" .
+        "insert into ${strSchemaName}.audit_statement (session_id, statement_id)\n" .
         "                             values (?, ?)");
 
     $oDbHash{$strDatabaseName}{hSqlAuditStmtErrorUpdate} = $oDbHash{$strDatabaseName}{hDb}->prepare(
-        "update pgaudit.audit_statement as audit_statement_update\n" .
+        "update ${strSchemaName}.audit_statement as audit_statement_update\n" .
         "   set state = 'error',\n" .
         "       error_session_line_num = ?" .
         " where exists\n" .
         "(\n" .
         "    select true\n" .
-        "      from pgaudit.log_event\n" .
-        "           inner join pgaudit.audit_substatement_detail\n" .
+        "      from ${strSchemaName}.log_event\n" .
+        "           inner join ${strSchemaName}.audit_substatement_detail\n" .
         "                on audit_substatement_detail.session_id = log_event.session_id\n" .
         "               and audit_substatement_detail.session_line_num = log_event.session_line_num\n" .
         "               and audit_substatement_detail.statement_id = audit_statement_update.statement_id\n" .
-        "           inner join pgaudit.audit_statement\n" .
+        "           inner join ${strSchemaName}.audit_statement\n" .
         "                on audit_statement.session_id = audit_substatement_detail.session_id\n" .
         "               and audit_statement.statement_id = audit_substatement_detail.statement_id\n" .
         "     where log_event.session_id = ?\n" .
@@ -288,11 +302,11 @@ sub databaseGet
         ")");
 
     $oDbHash{$strDatabaseName}{hSqlAuditSubStmtInsert} = $oDbHash{$strDatabaseName}{hDb}->prepare(
-        "insert into pgaudit.audit_substatement (session_id, statement_id, substatement_id, substatement)\n" .
+        "insert into ${strSchemaName}.audit_substatement (session_id, statement_id, substatement_id, substatement)\n" .
         "                                values (?, ?, ?, ?)");
 
     $oDbHash{$strDatabaseName}{hSqlAuditSubStmtDetailInsert} = $oDbHash{$strDatabaseName}{hDb}->prepare(
-        "insert into pgaudit.audit_substatement_detail (session_id, statement_id, substatement_id, session_line_num,\n" .
+        "insert into ${strSchemaName}.audit_substatement_detail (session_id, statement_id, substatement_id, session_line_num,\n" .
         "                                               audit_type, class, command, object_type, object_name)\n" .
         "                                       values (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
