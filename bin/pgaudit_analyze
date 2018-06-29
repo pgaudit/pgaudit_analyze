@@ -189,7 +189,7 @@ sub databaseGet
 
     $oDbHash{$strDatabaseName}{hDb}->do("set session authorization ${strAuditUserName}");
 
-    my $strSchemaName = (defined($strLogServer) ? "{$strLogServer}_{$strDatabaseName}" : strAuditSchemaName);
+    my $strSchemaName = (defined($strLogServer) ? "{$strLogServer}_{$strDatabaseName}" : $strAuditSchemaName);
 
     $hSqlSchemaSelect->execute($strSchemaName);
 
