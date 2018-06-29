@@ -179,7 +179,6 @@ sub databaseGet
         (defined($strLogServer) ? "host=${strLogServer}" : (defined($strSocketPath) ? "host=${strSocketPath}" : '')),
         $strDbUser, undef,
         {AutoCommit => 0, RaiseError => 1});
-    
 
     # Check for the audit schema to determine whether or not to log this database
     my $hSqlSchemaSelect = $oDbHash{$strDatabaseName}{hDb}->prepare(
@@ -189,9 +188,10 @@ sub databaseGet
 
     $oDbHash{$strDatabaseName}{hDb}->do("set session authorization ${strAuditUserName}");
 
-    my $strSchemaName = (defined($strLogServer) ? "{$strLogServer}_{$strDatabaseName}" : $strAuditSchemaName);
-
-    $hSqlSchemaSelect->execute($strSchemaName);
+    my $strSchemaName = (defined($strLogServer) ? "\"" . "${strLogServer}_${strDatabaseName}" . "\"" : $strAuditSchemaName);
+    my $strSchemaNameNoQuotes = (defined($strLogServer) ? "${strLogServer}_${strDatabaseName}" : $strAuditSchemaName);
+    
+    $hSqlSchemaSelect->execute($strSchemaNameNoQuotes);
 
     $oDbHash{$strDatabaseName}{log} = ($hSqlSchemaSelect->fetchrow_array())[0] ? true : false;
     undef($hSqlSchemaSelect);
