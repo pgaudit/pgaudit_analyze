@@ -30,7 +30,21 @@ psql -U postgres -f sql/audit.sql <db name>
 pgAudit Analyze is intended to be run as a daemon process.
 ```
 ./pgaudit_analyze --daemon /path/to/log/files
-./pgaudit_analyze --daemon --port=5432 --socket-path=127.0.0.1 --log-file=/path/to/pgaudit_analyze.log --user=pgaudit_etl /path/to/log/files
+./pgaudit_analyze --daemon --port=5432 --socket-path=localhost --log-file=/path/to/pgaudit_analyze.log --user=pgaudit_etl /path/to/log/files
+```
+
+## One Audit Database per Cluster
+
+pgAudit Analyze is intended to be run as a daemon process.
+```
+./pgaudit_analyze --daemon --port=5432 --socket-path=localhost --log-file=/path/to/pgaudit_analyze.log --user=pgaudit_etl --log-server=localhost --log-database=pgaudit --log-port=5432 /path/to/log/files
+```
+
+## One Audit Database per Group of Clusters
+
+pgAudit Analyze is intended to be run as a daemon process.
+```
+./pgaudit_analyze --daemon --port=5432 --socket-path=localhost --log-file=/path/to/pgaudit_analyze.log --user=pgaudit_etl --log-server=audit_log_server --log-database=pgaudit --log-port=5432 /path/to/log/files
 ```
 
 ## Testing
