@@ -126,6 +126,7 @@ my $strLogOutFile = '/var/log/pgaudit_analyze.log';
 my $strDbUser = getpwuid($<);
 my $strUseCenteralServer = false;
 my $strLogServer;
+my $strLogFromServer;
 my $strLogDatabase;
 my $iLogPort;
 
@@ -136,6 +137,7 @@ GetOptions ('help' => \$bHelp,
             'socket-path=s' => \$strSocketPath,
             'log-file=s' => \$strLogOutFile,
             'use-centeral-server=s' => \$strUseCenteralServer,
+            'log-from-server=s' => \$strLogFromServer,
             'log-server=s' => \$strLogServer,
             'log-database=s' => \$strLogDatabase,
             'log-port=s' => \$iLogPort,
@@ -188,8 +190,8 @@ sub databaseGet
 
     $oDbHash{$strDatabaseName}{hDb}->do("set session authorization ${strAuditUserName}");
 
-    my $strSchemaName = (defined($strLogServer) ? "\"" . "${strLogServer}_${strDatabaseName}" . "\"" : $strAuditSchemaName);
-    my $strSchemaNameNoQuotes = (defined($strLogServer) ? "${strLogServer}_${strDatabaseName}" : $strAuditSchemaName);
+    my $strSchemaName = (defined($strLogServer) ? "\"" . (defined($strLogFromServer) ? $strLogFromServer : $strSocketPath) . "_${strDatabaseName}" . "\"" : $strAuditSchemaName);
+    my $strSchemaNameNoQuotes = (defined($strLogServer) ? (defined($strLogFromServer) ? $strLogFromServer : $strSocketPath) . "_${strDatabaseName}" : $strAuditSchemaName);
     
     $hSqlSchemaSelect->execute($strSchemaNameNoQuotes);
 
