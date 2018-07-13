@@ -88,7 +88,8 @@ use constant
     AUDIT_FIELD_COMMAND             => 4,
     AUDIT_FIELD_OBJECT_TYPE         => 5,
     AUDIT_FIELD_OBJECT_NAME         => 6,
-    AUDIT_FIELD_STATEMENT           => 7
+    AUDIT_FIELD_STATEMENT           => 7,
+    AUDIT_FIELD_PARAMETER           => 8,
 };
 
 use constant
@@ -304,8 +305,8 @@ sub databaseGet
         ")");
 
     $oDbHash{$strDatabaseName}{hSqlAuditSubStmtInsert} = $oDbHash{$strDatabaseName}{hDb}->prepare(
-        "insert into ${strSchemaName}.audit_substatement (session_id, statement_id, substatement_id, substatement)\n" .
-        "                                values (?, ?, ?, ?)");
+        "insert into ${strSchemaName}.audit_substatement (session_id, statement_id, substatement_id, substatement, parameter)\n" .
+        "                                values (?, ?, ?, ?, ?)");
 
     $oDbHash{$strDatabaseName}{hSqlAuditSubStmtDetailInsert} = $oDbHash{$strDatabaseName}{hDb}->prepare(
         "insert into ${strSchemaName}.audit_substatement_detail (session_id, statement_id, substatement_id, session_line_num,\n" .
@@ -537,8 +538,14 @@ sub auditWrite
         if ($lStatementId == $oSessionHash{$strSessionId}{statement_id} &&
             $lSubStatementId > $oSessionHash{$strSessionId}{substatement_id})
         {
+            # Instead of undef parameter will be "<none>". Since we wish it to be undef to write a NULL to postgres, we fix it here.
+            if ($stryRow[AUDIT_FIELD_PARAMETER] eq "<none>")
+            {
+                undef $stryRow[AUDIT_FIELD_PARAMETER];
+            }
             $oDbHash{$strDatabaseName}{hSqlAuditSubStmtInsert}->execute(
-                $strSessionId, $lStatementId, $lSubStatementId, $stryRow[AUDIT_FIELD_STATEMENT]);
+                $strSessionId, $lStatementId, $lSubStatementId, $stryRow[AUDIT_FIELD_STATEMENT],
+                defined($stryRow[AUDIT_FIELD_PARAMETER]) ? "{" . $stryRow[AUDIT_FIELD_PARAMETER] . "}" : undef);
             $oSessionHash{$strSessionId}{substatement_id} = $lSubStatementId;
         }
 
