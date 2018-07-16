@@ -39,7 +39,7 @@ This will store all the data in the pgaudit schema within the same database.
 
 pgAudit Analyze is intended to be run as a daemon process.
 
-This will store the data in the --log-database with one schema per database. The schema name's need to be in this format: (database name).
+This will store the data in the --log-database with one schema per database. The schema name's need to be in this format: (--socket-path)_(database name).
 ```
 ./pgaudit_analyze --daemon --port=5432 --socket-path=localhost --log-file=/path/to/pgaudit_analyze.log --user=pgaudit_etl --log-server=localhost --log-database=pgaudit --log-port=5432 /path/to/log/files
 ```
