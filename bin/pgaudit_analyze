@@ -539,9 +539,12 @@ sub auditWrite
             $lSubStatementId > $oSessionHash{$strSessionId}{substatement_id})
         {
             # Instead of undef parameter will be "<none>". Since we wish it to be undef to write a NULL to postgres, we fix it here.
-            if ($stryRow[AUDIT_FIELD_PARAMETER] eq "<none>")
+            if (defined($stryRow[AUDIT_FIELD_PARAMETER]))
             {
-                undef $stryRow[AUDIT_FIELD_PARAMETER];
+                if ($stryRow[AUDIT_FIELD_PARAMETER] eq "<none>")
+                {
+                    undef $stryRow[AUDIT_FIELD_PARAMETER];
+                }
             }
             $oDbHash{$strDatabaseName}{hSqlAuditSubStmtInsert}->execute(
                 $strSessionId, $lStatementId, $lSubStatementId, $stryRow[AUDIT_FIELD_STATEMENT],
