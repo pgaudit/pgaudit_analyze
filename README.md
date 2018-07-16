@@ -28,6 +28,8 @@ psql -U postgres -f sql/audit.sql <db name>
 ## Running
 
 pgAudit Analyze is intended to be run as a daemon process.
+
+This will store all the data in the pgaudit schema within the same database.
 ```
 ./pgaudit_analyze --daemon /path/to/log/files
 ./pgaudit_analyze --daemon --port=5432 --socket-path=localhost --log-file=/path/to/pgaudit_analyze.log --user=pgaudit_etl /path/to/log/files
@@ -36,6 +38,8 @@ pgAudit Analyze is intended to be run as a daemon process.
 ## One Audit Database per Cluster
 
 pgAudit Analyze is intended to be run as a daemon process.
+
+This will store the data in the --log-database with one schema per database. The schema name's need to be in this format: (database name).
 ```
 ./pgaudit_analyze --daemon --port=5432 --socket-path=localhost --log-file=/path/to/pgaudit_analyze.log --user=pgaudit_etl --log-server=localhost --log-database=pgaudit --log-port=5432 /path/to/log/files
 ```
@@ -43,6 +47,8 @@ pgAudit Analyze is intended to be run as a daemon process.
 ## One Audit Database per Group of Clusters
 
 pgAudit Analyze is intended to be run as a daemon process.
+
+This will store the data in the --log-database with one schema per database. The schema name's need to be in this format: (--log-server-name)_(database name).
 ```
 ./pgaudit_analyze --daemon --port=5432 --socket-path=localhost --log-file=/path/to/pgaudit_analyze.log --user=pgaudit_etl --log-server=audit_log_server --log-database=pgaudit --log-port=5432 --log-server-name=local_server_name /path/to/log/files
 ```
