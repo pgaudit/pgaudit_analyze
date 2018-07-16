@@ -232,6 +232,38 @@ grant select,
    on pgaudit.audit_substatement_detail
    to pgaudit_etl;
 
+-- Create function to put parameters into sql 
+CREATE OR REPLACE FUNCTION pgaudit.update_query_with_parameters (
+  query text,
+  parameter text []
+)
+RETURNS text AS
+$body$
+DECLARE
+  return_query TEXT;
+  array_len INTEGER;
+BEGIN
+    return_query = query;
+    IF return_query IS NULL THEN
+        RETURN NULL;
+    ELSIF parameter IS NULL THEN
+        RETURN return_query;
+    ELSE
+        array_len = array_length(parameter, 1);
+
+        FOR i IN 1..array_len LOOP
+            return_query = regexp_replace(return_query, '\$' || i || '([^0-9]|$)', quote_nullable(parameter[i]) || E'\\1', 'g');
+        END LOOP; 
+
+        RETURN return_query;
+    END IF;
+END;
+$body$
+LANGUAGE 'plpgsql'
+VOLATILE
+CALLED ON NULL INPUT
+SECURITY INVOKER;   
+   
 -- Create vw_audit_event view to allow easy access to the pgaudit log entries
 create view pgaudit.vw_audit_event as
 select session.session_id,
@@ -242,6 +274,9 @@ select session.session_id,
        audit_statement.state,
        audit_statement.error_session_line_num,
        audit_substatement.substatement_id,
+       pgaudit.update_query_with_parameters(
+         audit_substatement.substatement, audit_substatement.parameter) AS
+         substatement,
        audit_substatement.substatement,
        audit_substatement_detail.audit_type,
        audit_substatement_detail.class,
