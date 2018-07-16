@@ -34,9 +34,10 @@ pgaudit_analyze [options] <pg-log-path>
    --log-file             location of the log file for pgaudit_analyze (defaults to /var/log/pgaudit_analyze.log)
    --user                 specify postgres user instead of using pgaudit_analyze invoker
    --log-server           specify host name for the logging server (default to --socket-path)
-   --log-database         specifyc database name for the logging server (default to same database name in the audit entries)
+   --log-database         specify database name for the logging server (default to same database name in the audit entries)
    --log-port             specify port for the logging server (default to --port)
-
+   --log-from-server      specify the host name for the server you are logging from, aka local server (default to --socket-path)
+            
  General Options:
    --help                 display usage and exit
 =cut
