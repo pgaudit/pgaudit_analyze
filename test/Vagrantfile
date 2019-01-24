@@ -14,7 +14,7 @@ Vagrant.configure(2) do |config|
         rpm -ivh http://yum.postgresql.org/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm
         yum install -y postgresql96-server postgresql96-devel
 
-        rpm -ivh https://yum.postgresql.org/testing/10/redhat/rhel-7-x86_64/pgdg-centos10-10-1.noarch.rpm
+        rpm -ivh https://yum.postgresql.org/testing/10/redhat/rhel-7-x86_64/pgdg-centos10-10-2.noarch.rpm
         yum install -y postgresql10-server postgresql10-devel
 
         # Compile & install pgaudit
@@ -26,7 +26,7 @@ Vagrant.configure(2) do |config|
         git clone https://github.com/pgaudit/pgaudit.git -b REL9_6_STABLE pgaudit-9.6
         bash -c 'export PATH="$PATH:/usr/pgsql-9.6/bin" && make -C pgaudit-9.6 install USE_PGXS=1'
 
-        git clone https://github.com/pgaudit/pgaudit.git -b dev-pg10 pgaudit-10
+        git clone https://github.com/pgaudit/pgaudit.git -b REL_10_STABLE pgaudit-10
         bash -c 'export PATH="$PATH:/usr/pgsql-10/bin" && make -C pgaudit-10 install USE_PGXS=1'
 
         # Install EPEL
