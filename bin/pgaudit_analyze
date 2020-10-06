@@ -280,6 +280,7 @@ sub databaseGet
         "                on audit_substatement_detail.session_id = log_event.session_id\n" .
         "               and audit_substatement_detail.session_line_num = log_event.session_line_num\n" .
         "               and audit_substatement_detail.statement_id = audit_statement_update.statement_id\n" .
+        "               and audit_substatement_detail.session_id = audit_statement_update.session_id\n" .
         "           inner join pgaudit.audit_statement\n" .
         "                on audit_statement.session_id = audit_substatement_detail.session_id\n" .
         "               and audit_statement.statement_id = audit_substatement_detail.statement_id\n" .
