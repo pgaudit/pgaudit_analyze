@@ -690,26 +690,41 @@ while(!$bDone)
             my $strUserName = $$stryRow[LOG_FIELD_USER_NAME];
             my $strDatabaseName = $$stryRow[LOG_FIELD_DATABASE_NAME];
 
-            if (defined($strUserName) && $strAuditUserName ne $strUserName &&
-                defined($strDatabaseName) && databaseGet($strDatabaseName) &&
-                (!defined($oSessionHash{$strSessionId}) || !defined($oSessionHash{$strSessionId}{session_line_num}) ||
-                 $lSessionLineNum > $oSessionHash{$strSessionId}{session_line_num}))
+            eval {
+                if (defined($strUserName) && $strAuditUserName ne $strUserName &&
+                    defined($strDatabaseName) && databaseGet($strDatabaseName) &&
+                    (!defined($oSessionHash{$strSessionId}) || !defined($oSessionHash{$strSessionId}{session_line_num}) ||
+                    $lSessionLineNum > $oSessionHash{$strSessionId}{session_line_num}))
+                {
+                    sessionGet($strSessionId, $lSessionLineNum, $$stryRow[LOG_FIELD_PROCESS_ID], $$stryRow[LOG_FIELD_SESSION_START_TIME],
+                            $strUserName, $strDatabaseName, $$stryRow[LOG_FIELD_APPLICATION_NAME], $$stryRow[LOG_FIELD_CONNECTION_FROM],
+                            $$stryRow[LOG_FIELD_COMMAND_TAG], $$stryRow[LOG_FIELD_ERROR_SEVERITY]);
+
+                    logWrite($strSessionId, $strDatabaseName, $$stryRow[LOG_FIELD_LOG_TIME], $lSessionLineNum,
+                            defined($$stryRow[LOG_FIELD_COMMAND_TAG]) ? lc($$stryRow[LOG_FIELD_COMMAND_TAG]) : undef,
+                            defined($$stryRow[LOG_FIELD_ERROR_SEVERITY]) ? lc($$stryRow[LOG_FIELD_ERROR_SEVERITY]) : undef,
+                            defined($$stryRow[LOG_FIELD_SQL_STATE_CODE]) ? lc($$stryRow[LOG_FIELD_SQL_STATE_CODE]) : undef,
+                            $$stryRow[LOG_FIELD_VIRTUAL_TRANSACTION_ID],
+                            $$stryRow[LOG_FIELD_TRANSACTION_ID], $$stryRow[LOG_FIELD_MESSAGE], $$stryRow[LOG_FIELD_DETAIL],
+                            $$stryRow[LOG_FIELD_HINT], $$stryRow[LOG_FIELD_QUERY], $$stryRow[LOG_FIELD_QUERY_POS],
+                            $$stryRow[LOG_FIELD_INTERNAL_QUERY], $$stryRow[LOG_FIELD_INTERNAL_QUERY_POS], $$stryRow[LOG_FIELD_CONTEXT],
+                            $$stryRow[LOG_FIELD_LOCATION]);
+
+                    $oDbHash{$strDatabaseName}{hDb}->commit();
+                }
+            };
+            if ($@)
             {
-                sessionGet($strSessionId, $lSessionLineNum, $$stryRow[LOG_FIELD_PROCESS_ID], $$stryRow[LOG_FIELD_SESSION_START_TIME],
-                           $strUserName, $strDatabaseName, $$stryRow[LOG_FIELD_APPLICATION_NAME], $$stryRow[LOG_FIELD_CONNECTION_FROM],
-                           $$stryRow[LOG_FIELD_COMMAND_TAG], $$stryRow[LOG_FIELD_ERROR_SEVERITY]);
-
-                logWrite($strSessionId, $strDatabaseName, $$stryRow[LOG_FIELD_LOG_TIME], $lSessionLineNum,
-                         defined($$stryRow[LOG_FIELD_COMMAND_TAG]) ? lc($$stryRow[LOG_FIELD_COMMAND_TAG]) : undef,
-                         defined($$stryRow[LOG_FIELD_ERROR_SEVERITY]) ? lc($$stryRow[LOG_FIELD_ERROR_SEVERITY]) : undef,
-                         defined($$stryRow[LOG_FIELD_SQL_STATE_CODE]) ? lc($$stryRow[LOG_FIELD_SQL_STATE_CODE]) : undef,
-                         $$stryRow[LOG_FIELD_VIRTUAL_TRANSACTION_ID],
-                         $$stryRow[LOG_FIELD_TRANSACTION_ID], $$stryRow[LOG_FIELD_MESSAGE], $$stryRow[LOG_FIELD_DETAIL],
-                         $$stryRow[LOG_FIELD_HINT], $$stryRow[LOG_FIELD_QUERY], $$stryRow[LOG_FIELD_QUERY_POS],
-                         $$stryRow[LOG_FIELD_INTERNAL_QUERY], $$stryRow[LOG_FIELD_INTERNAL_QUERY_POS], $$stryRow[LOG_FIELD_CONTEXT],
-                         $$stryRow[LOG_FIELD_LOCATION]);
-
-                $oDbHash{$strDatabaseName}{hDb}->commit();
+                my $strMessage = $@;
+                my $dbMsg = "database \"$strDatabaseName\" does not exist";
+                if (index($strMessage, $dbMsg) != -1)
+                    {# Could be parsing a msg for a DB that does not exist
+                     # Log and continue
+                        print("$dbMsg, continuing\n");
+                    }
+                else {
+                    die $strMessage;
+                }
             }
         }
     };
