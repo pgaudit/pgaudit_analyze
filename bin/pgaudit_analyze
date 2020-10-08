@@ -720,7 +720,7 @@ while(!$bDone)
                 if (index($strMessage, $dbMsg) != -1)
                     {# Could be parsing a msg for a DB that does not exist
                      # Log and continue
-                        print("$dbMsg, continuing\n");
+                        syswrite($hLog, "$dbMsg, continuing\n");
                     }
                 else {
                     die $strMessage;
