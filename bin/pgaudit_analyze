@@ -596,11 +596,9 @@ sub daemonInit
     chdir '/'
         or confess "chdir() failed: $!";
 
-    # close stdin/stdout
+    # close stdin, stdout previously closed/redirected
     open STDIN, '<', '/dev/null'
         or confess "Couldn't close standard input: $!";
-    open STDOUT, '>', $strLogOutFile
-        or confess "Couldn't close standard output: $!";
 
     # create new process
     defined($pid = fork)
@@ -633,6 +631,10 @@ my $strNextLogFile = nextLogFile($strLogPath);
 # Open log file
 open(my $hLog, '>', $strLogOutFile)
     or confess "unable to open pgAudit Analyze log file $strLogOutFile: $!";
+
+# always redirect stdout to logfile
+open (STDOUT, '>&', $hLog)
+    or confess "Couldn't close standard output and redirect to logfile: $!";
 
 # Daemonize the process
 daemonInit()
