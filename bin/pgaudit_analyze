@@ -630,7 +630,7 @@ my $bDone = false;
 my $strNextLogFile = nextLogFile($strLogPath);
 
 # Open log file
-open(my $hLog, '>', $strLogOutFile)
+open(my $hLog, '>>', $strLogOutFile)
     or confess "unable to open pgAudit Analyze log file $strLogOutFile: $!";
 
 # Daemonize the process
