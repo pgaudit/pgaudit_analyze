@@ -610,6 +610,14 @@ sub daemonInit
 }
 
 ####################################################################################################################################
+# getTimestamp
+####################################################################################################################################
+sub getTimestamp
+{
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
+    return sprintf ( "%04d-%02d-%02d %02d:%02d:%02d", $year+1900,$mon+1,$mday,$hour,$min,$sec);
+}
+####################################################################################################################################
 # Main loop
 ####################################################################################################################################
 my $strLogPath = $ARGV[0];
@@ -672,7 +680,7 @@ while(!$bDone)
             $strLogFile = $strNextLogFile;
             undef($strNextLogFile);
 
-            syswrite($hLog, "reading ${strLogFile}\n");
+            syswrite($hLog, "${\getTimestamp()}: reading ${strLogFile}\n");
 
             # Read updating file
             # http://stackoverflow.com/questions/1425223/how-do-i-read-a-file-which-is-constantly-updating
