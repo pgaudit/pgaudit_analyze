@@ -47,7 +47,7 @@ begin
 end $$;
 
 -- Create pgaudit schema
-create schema pgaudit authorization pgaudit_owner;
+create schema if not exists pgaudit authorization pgaudit_owner;
 
 -- Set session authorization so all schema objects are owned by pgaudit_owner
 set session authorization pgaudit_owner;
@@ -57,8 +57,27 @@ grant usage
    on schema pgaudit
    to public;
 
+-- Create cluster table to potentially track multiple clusters
+create table if not exists pgaudit.cluster 
+(
+    cluster_id serial,
+    cluster_name text,
+    unique(cluster_name)
+);
+
+grant select,
+      insert,
+      update
+   on pgaudit.cluster
+   to pgaudit_etl;
+
+grant select,
+      update
+   on pgaudit.cluster_cluster_id_seq
+   to pgaudit_etl;
+
 -- Create session table to track user database sessions
-create table pgaudit.session
+create table if not exists pgaudit.session
 (
     session_id text not null,
     process_id int not null,
@@ -80,7 +99,7 @@ grant select,
    to pgaudit_etl;
 
 -- Create logon table to track recent user login info
-create table pgaudit.logon
+create table if not exists pgaudit.logon
 (
      user_name text not null,
      last_success timestamp with time zone,
@@ -122,7 +141,7 @@ $$ language plpgsql security definer;
 grant execute on function pgaudit.logon_info() to public;
 
 -- Create log_event table to track all events logged to the PostgreSQL log
-create table pgaudit.log_event
+create table if not exists pgaudit.log_event
 (
     session_id text not null
         constraint logevent_sessionid_fk
@@ -154,7 +173,7 @@ grant select,
    to pgaudit_etl;
 
 -- Create audit_statment table to track all user statements logged by the pgaudit extension
-create table pgaudit.audit_statement
+create table if not exists pgaudit.audit_statement
 (
     session_id text not null
         constraint auditstatement_sessionid_fk
@@ -179,7 +198,7 @@ grant select,
    to pgaudit_etl;
 
 -- Create audit_statment table to track all user sub-statements logged by the pgaudit extension
-create table pgaudit.audit_substatement
+create table if not exists pgaudit.audit_substatement
 (
     session_id text not null,
     statement_id numeric not null,
@@ -200,7 +219,7 @@ grant select,
    to pgaudit_etl;
 
 -- Create audit_statment table to track all user sub-statement detail logged by the pgaudit extension
-create table pgaudit.audit_substatement_detail
+create table if not exists pgaudit.audit_substatement_detail
 (
     session_id text not null,
     statement_id numeric not null,
@@ -233,8 +252,10 @@ grant select,
    to pgaudit_etl;
 
 -- Create vw_audit_event view to allow easy access to the pgaudit log entries
+drop view if exists  pgaudit.vw_audit_event ;
 create view pgaudit.vw_audit_event as
-select session.session_id,
+select cluster.cluster_name,
+       session.session_id,
        log_event.session_line_num,
        log_event.log_time,
        session.user_name,
@@ -260,6 +281,8 @@ select session.session_id,
            and audit_substatement.substatement_id = audit_substatement_detail.substatement_id
        inner join pgaudit.audit_statement
             on audit_statement.session_id = audit_substatement_detail.session_id
-           and audit_statement.statement_id = audit_substatement_detail.statement_id;
+           and audit_statement.statement_id = audit_substatement_detail.statement_id
+        left join pgaudit.cluster
+            on cluster.cluster_id = substring(log_event.session_id from '^(?:[0-9a-f]+\.){2}([0-9]+)$')::int;
 
 COMMIT;
