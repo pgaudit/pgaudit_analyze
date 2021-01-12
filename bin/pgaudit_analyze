@@ -30,7 +30,7 @@ pgaudit_analyze [options] <pg-log-path>
  Configuration Options:
    --daemon             run as a daemon (consider running under upstart or systemctl)
    --port               port that PostgreSQL is running on (defaults to 5432)
-   --socket-path        socket directory used by PostgreSQL (default to system default directory)
+   --socket-path        PostgreSQL host or socket directory (default to system default directory)
    --log-file           location of the log file for pgaudit_analyze (defaults to /var/log/pgaudit_analyze.log)
    --user               specify postgres user instead of using pgaudit_analyze invoker
 
@@ -280,6 +280,7 @@ sub databaseGet
         "                on audit_substatement_detail.session_id = log_event.session_id\n" .
         "               and audit_substatement_detail.session_line_num = log_event.session_line_num\n" .
         "               and audit_substatement_detail.statement_id = audit_statement_update.statement_id\n" .
+        "               and audit_substatement_detail.session_id = audit_statement_update.session_id\n" .
         "           inner join pgaudit.audit_statement\n" .
         "                on audit_statement.session_id = audit_substatement_detail.session_id\n" .
         "               and audit_statement.statement_id = audit_substatement_detail.statement_id\n" .
