@@ -1,5 +1,5 @@
 Vagrant.configure(2) do |config|
-    config.vm.box = "bento/centos-7.3"
+    config.vm.box = "bento/centos-7.9"
 
     config.vm.provider :virtualbox do |vb|
         vb.name = "pgaudit-analyze-centos7-test"
@@ -8,29 +8,42 @@ Vagrant.configure(2) do |config|
     # Provision the VM
     config.vm.provision "shell", inline: <<-SHELL
         # Install PostgreSQL
-        rpm -ivh http://yum.postgresql.org/9.5/redhat/rhel-7-x86_64/pgdg-centos95-9.5-3.noarch.rpm
-        yum install -y postgresql95-server postgresql95-devel
+        rpm -ivh https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+        yum install -y postgresql95-server
+        yum install -y postgresql96-server
+        yum install -y postgresql10-server
+        yum install -y postgresql11-server
+        yum install -y postgresql12-server
+        yum install -y postgresql13-server
 
-        rpm -ivh http://yum.postgresql.org/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm
-        yum install -y postgresql96-server postgresql96-devel
-
-        rpm -ivh https://yum.postgresql.org/testing/10/redhat/rhel-7-x86_64/pgdg-centos10-10-2.noarch.rpm
-        yum install -y postgresql10-server postgresql10-devel
+        # Install PostgreSQL development
+        yum install -y centos-release-scl-rh epel-release
+        yum install -y git gcc openssl-devel llvm-toolset-7-clang llvm5.0
+        yum install -y postgresql95-devel
+        yum install -y postgresql96-devel
+        yum install -y postgresql10-devel
+        yum install -y postgresql11-devel
+        yum install -y postgresql12-devel
+        yum install -y postgresql13-devel
 
         # Compile & install pgaudit
-        yum install -y gcc openssl-devel git
-
         git clone https://github.com/pgaudit/pgaudit.git -b REL9_5_STABLE pgaudit-9.5
-        bash -c 'export PATH="$PATH:/usr/pgsql-9.5/bin" && make -C pgaudit-9.5 install USE_PGXS=1'
+        make -C pgaudit-9.5 install USE_PGXS=1 PG_CONFIG=/usr/pgsql-9.5/bin/pg_config
 
         git clone https://github.com/pgaudit/pgaudit.git -b REL9_6_STABLE pgaudit-9.6
-        bash -c 'export PATH="$PATH:/usr/pgsql-9.6/bin" && make -C pgaudit-9.6 install USE_PGXS=1'
+        make -C pgaudit-9.6 install USE_PGXS=1 PG_CONFIG=/usr/pgsql-9.6/bin/pg_config
 
         git clone https://github.com/pgaudit/pgaudit.git -b REL_10_STABLE pgaudit-10
-        bash -c 'export PATH="$PATH:/usr/pgsql-10/bin" && make -C pgaudit-10 install USE_PGXS=1'
+        make -C pgaudit-10 install USE_PGXS=1 PG_CONFIG=/usr/pgsql-10/bin/pg_config
 
-        # Install EPEL
-        yum install -y epel-release
+        git clone https://github.com/pgaudit/pgaudit.git -b REL_11_STABLE pgaudit-11
+        make -C pgaudit-11 install USE_PGXS=1 PG_CONFIG=/usr/pgsql-11/bin/pg_config
+
+        git clone https://github.com/pgaudit/pgaudit.git -b REL_12_STABLE pgaudit-12
+        make -C pgaudit-12 install USE_PGXS=1 PG_CONFIG=/usr/pgsql-12/bin/pg_config
+
+        git clone https://github.com/pgaudit/pgaudit.git -b REL_13_STABLE pgaudit-13
+        make -C pgaudit-13 install USE_PGXS=1 PG_CONFIG=/usr/pgsql-13/bin/pg_config
 
         # Install Perl
         yum install -y perl perl-DBD-Pg perl-IPC-System-Simple perl-TermReadKey
