@@ -354,7 +354,8 @@ sub sessionGet
         # If state is defined then the select was successful
         if (defined($oSessionHash{$strSessionId}{state}))
         {
-            print "${\getTimestamp()}: session select $strSessionId: session_line_num $oSessionHash{$strSessionId}{session_line_num}" .
+            print getTimestamp() . ": session select ${strSessionId}:" .
+                  " session_line_num $oSessionHash{$strSessionId}{session_line_num}" .
                   ", statement_id $oSessionHash{$strSessionId}{statement_id}" .
                   ", substatement_id $oSessionHash{$strSessionId}{substatement_id}\n";
         }
@@ -429,7 +430,7 @@ sub sessionGet
 
             $oDbHash{$strDatabaseName}{hDb}->commit();
 
-            print "${\getTimestamp()}: session insert =  " . $strSessionId . "\n";
+            print getTimestamp() . ": session insert =  ${strSessionId}\n";
         }
     }
 
@@ -441,7 +442,7 @@ sub sessionGet
         $oDbHash{$strDatabaseName}{hSqlSessionUpdate}->execute($strApplicationName, $strSessionId);
         $oSessionHash{$strSessionId}{application_name} = $strApplicationName;
 
-        print "${\getTimestamp()}: session update =  " . $strSessionId . ", application = ${strApplicationName}\n";
+        print getTimestamp() . ": session update = ${strSessionId}, application = ${strApplicationName}\n";
     }
 
     # Add to the local cache
@@ -680,7 +681,7 @@ while(!$bDone)
             $strLogFile = $strNextLogFile;
             undef($strNextLogFile);
 
-            syswrite($hLog, "${\getTimestamp()}: reading ${strLogFile}\n");
+            syswrite($hLog, getTimestamp() . ": reading ${strLogFile}\n");
 
             # Read updating file
             # http://stackoverflow.com/questions/1425223/how-do-i-read-a-file-which-is-constantly-updating
@@ -729,7 +730,7 @@ while(!$bDone)
     {
         my $strMessage = $@;
 
-        syswrite($hLog, "${\getTimestamp()}: $@\n");
+        syswrite($hLog, getTimestamp() . ": $@\n");
         sleep(5);
 
         # Reset everything and start again
