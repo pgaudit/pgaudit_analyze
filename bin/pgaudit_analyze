@@ -599,9 +599,12 @@ sub daemonInit
     chdir '/'
         or confess "chdir() failed: $!";
 
-    # close stdin, stdout previously closed/redirected
+    # close stdin and stderr, stdout previously closed/redirected
     open STDIN, '<', '/dev/null'
         or confess "Couldn't close standard input: $!";
+
+    open STDERR, '<', '/dev/null'
+        or confess "Couldn't close standard error: $!";
 
     # create new process
     defined($pid = fork)
