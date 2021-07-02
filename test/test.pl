@@ -59,7 +59,7 @@ use constant
 ####################################################################################################################################
 # Command line parameters
 ####################################################################################################################################
-my $strPgSqlBin = '/usr/pgsql-10/bin';          # Path of PG binaries to use for this test
+my $strPgSqlBin = undef;                        # Path of PG binaries to use for this test
 my $strTestPath = 'test';                       # Path where testing will occur
 my $strPgLogPath = 'log';                       # Path where pg logs will be stored
 my $strUser = getpwuid($>);                     # PG user name
@@ -417,6 +417,12 @@ sub pgPsql
 my $strBasePath = dirname(dirname(abs_path($0)));
 my $strAnalyzeExe = "${strBasePath}/bin/pgaudit_analyze";
 my $strSql;
+
+# Error when bin path not specified
+if (!defined($strPgSqlBin))
+{
+    die("--pgsql-bin option is required");
+}
 
 &log("INIT:\n");
 
