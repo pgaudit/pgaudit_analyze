@@ -602,6 +602,8 @@ sub daemonInit
         or confess "Couldn't close standard input: $!";
     open STDOUT, '>', $strLogOutFile
         or confess "Couldn't close standard output: $!";
+    open STDERR, '<', '/dev/null'
+        or confess "Couldn't close standard error: $!";
 
     # create new process
     defined($pid = fork)
