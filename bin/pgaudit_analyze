@@ -356,7 +356,8 @@ sub sessionGet
         # If state is defined then the select was successful
         if (defined($oSessionHash{$strSessionId}{state}))
         {
-            print "session select $strSessionId: session_line_num $oSessionHash{$strSessionId}{session_line_num}" .
+            print timestampGet() . ": session select ${strSessionId}:" .
+                  " session_line_num $oSessionHash{$strSessionId}{session_line_num}" .
                   ", statement_id $oSessionHash{$strSessionId}{statement_id}" .
                   ", substatement_id $oSessionHash{$strSessionId}{substatement_id}\n";
         }
@@ -431,7 +432,7 @@ sub sessionGet
 
             $oDbHash{$strDatabaseName}{hDb}->commit();
 
-            print "session insert =  " . $strSessionId . "\n";
+            print timestampGet() . ": session insert =  ${strSessionId}\n";
         }
     }
 
@@ -443,7 +444,7 @@ sub sessionGet
         $oDbHash{$strDatabaseName}{hSqlSessionUpdate}->execute($strApplicationName, $strSessionId);
         $oSessionHash{$strSessionId}{application_name} = $strApplicationName;
 
-        print "session update =  " . $strSessionId . ", application = ${strApplicationName}\n";
+        print timestampGet() . ": session update = ${strSessionId}, application = ${strApplicationName}\n";
     }
 
     # Add to the local cache
@@ -613,6 +614,15 @@ sub daemonInit
 }
 
 ####################################################################################################################################
+# Get current timestamp as a string (used for logging)
+####################################################################################################################################
+sub timestampGet
+{
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
+    return sprintf ( "%04d-%02d-%02d %02d:%02d:%02d", $year+1900,$mon+1,$mday,$hour,$min,$sec);
+}
+
+####################################################################################################################################
 # Main loop
 ####################################################################################################################################
 my $strLogPath = $ARGV[0];
@@ -631,7 +641,7 @@ my $bDone = false;
 my $strNextLogFile = nextLogFile($strLogPath);
 
 # Open log file
-open(my $hLog, '>', $strLogOutFile)
+open(my $hLog, '>>', $strLogOutFile)
     or confess "unable to open pgAudit Analyze log file $strLogOutFile: $!";
 
 # Always redirect stdout to logfile
@@ -675,7 +685,7 @@ while(!$bDone)
             $strLogFile = $strNextLogFile;
             undef($strNextLogFile);
 
-            syswrite($hLog, "reading ${strLogFile}\n");
+            syswrite($hLog, timestampGet() . ": reading ${strLogFile}\n");
 
             # Read updating file
             # http://stackoverflow.com/questions/1425223/how-do-i-read-a-file-which-is-constantly-updating
@@ -724,7 +734,7 @@ while(!$bDone)
     {
         my $strMessage = $@;
 
-        syswrite($hLog, "$@\n");
+        syswrite($hLog, timestampGet() . ": $@\n");
         sleep(5);
 
         # Reset everything and start again

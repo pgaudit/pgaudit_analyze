@@ -1,0 +1,49 @@
+name: test
+
+on:
+  push:
+    branches:
+      - integration
+      - '**-ci'
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      # Let all the jobs run to completion even if one fails
+      fail-fast: false
+
+      # Test matrix
+      matrix:
+        include:
+          # Debian
+          - image: debian
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          path: pgaudit-analyze
+
+      - name: Build Test Container
+        run: docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -f ${GITHUB_WORKSPACE?}/pgaudit-analyze/test/Dockerfile.${{matrix.image}} -t pgaudit-analyze-test ${GITHUB_WORKSPACE?}/pgaudit-analyze
+
+      - name: Run PG 9.5 Test
+        run: docker run -v ${GITHUB_WORKSPACE?}/pgaudit-analyze:/pgaudit-analyze pgaudit-analyze-test /pgaudit-analyze/test/test.pl --pgsql-bin=/usr/lib/postgresql/9.5/bin
+
+      - name: Run PG 9.6 Test
+        run: docker run -v ${GITHUB_WORKSPACE?}/pgaudit-analyze:/pgaudit-analyze pgaudit-analyze-test /pgaudit-analyze/test/test.pl --pgsql-bin=/usr/lib/postgresql/9.6/bin
+
+      - name: Run PG 10 Test
+        run: docker run -v ${GITHUB_WORKSPACE?}/pgaudit-analyze:/pgaudit-analyze pgaudit-analyze-test /pgaudit-analyze/test/test.pl --pgsql-bin=/usr/lib/postgresql/10/bin
+
+      - name: Run PG 11 Test
+        run: docker run -v ${GITHUB_WORKSPACE?}/pgaudit-analyze:/pgaudit-analyze pgaudit-analyze-test /pgaudit-analyze/test/test.pl --pgsql-bin=/usr/lib/postgresql/11/bin
+
+      - name: Run PG 12 Test
+        run: docker run -v ${GITHUB_WORKSPACE?}/pgaudit-analyze:/pgaudit-analyze pgaudit-analyze-test /pgaudit-analyze/test/test.pl --pgsql-bin=/usr/lib/postgresql/12/bin
+
+      - name: Run PG 13 Test
+        run: docker run -v ${GITHUB_WORKSPACE?}/pgaudit-analyze:/pgaudit-analyze pgaudit-analyze-test /pgaudit-analyze/test/test.pl --pgsql-bin=/usr/lib/postgresql/13/bin
