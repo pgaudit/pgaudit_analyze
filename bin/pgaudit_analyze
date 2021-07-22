@@ -19,7 +19,8 @@ use POSIX qw(setsid);
 use lib dirname($0) . '/../lib';
 use PgAudit::CSV;
 use PgAudit::Wait;
-# flush the output buffer
+# Flush the output buffer
+# $| is named $OUTPUT_AUTOFLUSH in English.pm
 $|++;
 ####################################################################################################################################
 # Usage
