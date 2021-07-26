@@ -600,10 +600,9 @@ sub daemonInit
     chdir '/'
         or confess "chdir() failed: $!";
 
-    # close stdin and stderr, stdout previously closed/redirected
+    # Close stdin and stderr. stdout previously closed/redirected.
     open STDIN, '<', '/dev/null'
         or confess "Couldn't close standard input: $!";
-
     open STDERR, '<', '/dev/null'
         or confess "Couldn't close standard error: $!";
 
@@ -648,7 +647,7 @@ my $strNextLogFile = nextLogFile($strLogPath);
 open(my $hLog, '>>', $strLogOutFile)
     or confess "unable to open pgAudit Analyze log file $strLogOutFile: $!";
 
-# Always redirect stdout to logfile
+# Redirect stdout to log file
 open(STDOUT, '>&', $hLog)
     or confess "unable to close standard output and redirect to log file: $!";
 
