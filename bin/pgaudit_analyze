@@ -606,13 +606,13 @@ sub daemonInit
     open STDERR, '<', '/dev/null'
         or confess "Couldn't close standard error: $!";
 
-    # create new process
+    # Create new process
     defined($pid = fork)
         or confess "fork() failed: $!";
 
     exit if $pid;
 
-    # create new session group
+    # Create new session group
     setsid() or confess("setsid() failed: $!");
 }
 
