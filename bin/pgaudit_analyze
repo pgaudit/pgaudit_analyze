@@ -19,9 +19,10 @@ use POSIX qw(setsid);
 use lib dirname($0) . '/../lib';
 use PgAudit::CSV;
 use PgAudit::Wait;
-# Flush the output buffer
-# $| is named $OUTPUT_AUTOFLUSH in English.pm
+
+# Flush the output buffer. $| is named $OUTPUT_AUTOFLUSH in English.pm.
 $|++;
+
 ####################################################################################################################################
 # Usage
 ####################################################################################################################################
@@ -648,8 +649,8 @@ open(my $hLog, '>>', $strLogOutFile)
     or confess "unable to open pgAudit Analyze log file $strLogOutFile: $!";
 
 # Always redirect stdout to logfile
-open (STDOUT, '>&', $hLog)
-    or confess "Couldn't close standard output and redirect to logfile: $!";
+open(STDOUT, '>&', $hLog)
+    or confess "unable to close standard output and redirect to log file: $!";
 
 # Daemonize the process
 daemonInit()
