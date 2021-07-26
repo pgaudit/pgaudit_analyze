@@ -597,7 +597,7 @@ sub daemonInit
     chdir '/'
         or confess "chdir() failed: $!";
 
-    # close stdin/stdout
+    # Close stdin/stdout/stderr
     open STDIN, '<', '/dev/null'
         or confess "Couldn't close standard input: $!";
     open STDOUT, '>', $strLogOutFile
@@ -605,13 +605,13 @@ sub daemonInit
     open STDERR, '<', '/dev/null'
         or confess "Couldn't close standard error: $!";
 
-    # create new process
+    # Create new process
     defined($pid = fork)
         or confess "fork() failed: $!";
 
     exit if $pid;
 
-    # create new session group
+    # Create new session group
     setsid() or confess("setsid() failed: $!");
 }
 
