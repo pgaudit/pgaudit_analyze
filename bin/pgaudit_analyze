@@ -106,10 +106,15 @@ use constant
     STATE_ERROR => 'error'
 };
 
-use constant
-{
-    PAM_ERROR => 'pam_authenticate failed:'
-};
+####################################################################################################################################
+# Authentication errors that appear as type "LOG" before the type "FATAL" msg is recorded
+####################################################################################################################################
+my @AUTH_ERRORS = (
+    'pam_authenticate failed:',
+    'error from underlying PAM layer:',
+    'could not connect to Ident server at address'
+);
+
 
 use constant
 {
@@ -343,7 +348,7 @@ sub sessionGet
     # Set state to ERROR on authentication failure
     if (defined($strCommandTag) && lc($strCommandTag) eq COMMAND_TAG_AUTHENTICATION &&
         ( (defined($strErrorSeverity) && lc($strErrorSeverity) eq ERROR_SEVERITY_FATAL) ||
-          (defined($strMessage) && index($strMessage, PAM_ERROR) == 0 ) ))
+          (defined($strMessage) && grep {$strMessage =~ /^$_/} @AUTH_ERRORS )))
     {
         $strState = STATE_ERROR;
     }
