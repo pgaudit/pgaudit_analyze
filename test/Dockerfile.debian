@@ -26,6 +26,8 @@ RUN apt-get install -y postgresql-10 postgresql-server-dev-10
 RUN apt-get install -y postgresql-11 postgresql-server-dev-11
 RUN apt-get install -y postgresql-12 postgresql-server-dev-12
 RUN apt-get install -y postgresql-13 postgresql-server-dev-13
+RUN apt-get install -y postgresql-14 postgresql-server-dev-14
+RUN apt-get install -y postgresql-15 postgresql-server-dev-15
 
 # Install Perl packages
 RUN apt-get install -y libdbd-pg-perl libipc-system-simple-perl libterm-readkey-perl
@@ -48,6 +50,12 @@ RUN make -C /root/pgaudit/12 install USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/12
 
 RUN git clone https://github.com/pgaudit/pgaudit.git -b REL_13_STABLE /root/pgaudit/13
 RUN make -C /root/pgaudit/13 install USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/13/bin/pg_config
+
+RUN git clone https://github.com/pgaudit/pgaudit.git -b REL_14_STABLE /root/pgaudit/14
+RUN make -C /root/pgaudit/14 install USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/14/bin/pg_config
+
+RUN git clone https://github.com/pgaudit/pgaudit.git -b REL_15_STABLE /root/pgaudit/15
+RUN make -C /root/pgaudit/15 install USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/15/bin/pg_config
 
 USER postgres
 WORKDIR /var/lib/postgresql
