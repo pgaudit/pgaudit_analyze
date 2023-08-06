@@ -695,6 +695,12 @@ while(!$bDone)
             $oLogCSV = new PgAudit::CSV({binary => 1, empty_is_undef => 1});
         }
 
+        # Perl 5.36 fixed an issue where you could continue reading a file that was being appended to after hitting EOF, see:
+        # https://groups.google.com/g/linux.debian.bugs.dist/c/ZaxLI8YufO8. Therefore we must seek to the current location to
+        # continue reading if the log is being appended to.
+        seek($hFile, 0, 1)
+            or confess "unable to seek to current position in ${strLogPath}/${strLogFile}";
+
         # Parse all rows in the file into CSV
         while (my $stryRow = $oLogCSV->getline($hFile))
         {
