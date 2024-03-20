@@ -55,11 +55,7 @@ This will store the data in the --log-database with one schema per database. The
 
 ## Testing
 
-A `Vagrantfile` has been included in the test directory which gives the exact steps needed to get the regression rests running on `CentOS 7`. After logging on to the `vagrant` box simply run:
-```
-/pgaudit_analyze/test/test.pl
-```
-Regression tests will be run on PostgreSQL 10 by default. Specify `--pgsql-bin=/usr/pgsql-9.6/bin` to run tests on PostgreSQL 9.6 and use the same pattern for 9.5 testing.
+Regression tests are located in the `test` directory. See `test/README.md` for more information.
 
 ## Caveats
 

@@ -298,7 +298,8 @@ sub databaseGet
         "                on audit_substatement_detail.session_id = log_event.session_id\n" .
         "               and audit_substatement_detail.session_line_num = log_event.session_line_num\n" .
         "               and audit_substatement_detail.statement_id = audit_statement_update.statement_id\n" .
-        "           inner join ${strSchemaName}.audit_statement\n" .
+        "               and audit_substatement_detail.session_id = audit_statement_update.session_id\n" .
+        "           inner join pgaudit.audit_statement\n" .
         "                on audit_statement.session_id = audit_substatement_detail.session_id\n" .
         "               and audit_statement.statement_id = audit_substatement_detail.statement_id\n" .
         "     where log_event.session_id = ?\n" .
@@ -371,7 +372,8 @@ sub sessionGet
         # If state is defined then the select was successful
         if (defined($oSessionHash{$strSessionId}{state}))
         {
-            print "session select $strSessionId: session_line_num $oSessionHash{$strSessionId}{session_line_num}" .
+            print timestampGet() . ": session select ${strSessionId}:" .
+                  " session_line_num $oSessionHash{$strSessionId}{session_line_num}" .
                   ", statement_id $oSessionHash{$strSessionId}{statement_id}" .
                   ", substatement_id $oSessionHash{$strSessionId}{substatement_id}\n";
         }
@@ -446,7 +448,7 @@ sub sessionGet
 
             $oDbHash{$strDatabaseName}{hDb}->commit();
 
-            print "session insert =  " . $strSessionId . "\n";
+            print timestampGet() . ": session insert =  ${strSessionId}\n";
         }
     }
 
@@ -458,7 +460,7 @@ sub sessionGet
         $oDbHash{$strDatabaseName}{hSqlSessionUpdate}->execute($strApplicationName, $strSessionId);
         $oSessionHash{$strSessionId}{application_name} = $strApplicationName;
 
-        print "session update =  " . $strSessionId . ", application = ${strApplicationName}\n";
+        print timestampGet() . ": session update = ${strSessionId}, application = ${strApplicationName}\n";
     }
 
     # Add to the local cache
@@ -622,20 +624,31 @@ sub daemonInit
     chdir '/'
         or confess "chdir() failed: $!";
 
-    # close stdin/stdout
+    # Close stdin/stdout/stderr
     open STDIN, '<', '/dev/null'
         or confess "Couldn't close standard input: $!";
     open STDOUT, '>', $strLogOutFile
         or confess "Couldn't close standard output: $!";
+    open STDERR, '<', '/dev/null'
+        or confess "Couldn't close standard error: $!";
 
-    # create new process
+    # Create new process
     defined($pid = fork)
         or confess "fork() failed: $!";
 
     exit if $pid;
 
-    # create new session group
+    # Create new session group
     setsid() or confess("setsid() failed: $!");
+}
+
+####################################################################################################################################
+# Get current timestamp as a string (used for logging)
+####################################################################################################################################
+sub timestampGet
+{
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
+    return sprintf ( "%04d-%02d-%02d %02d:%02d:%02d", $year+1900,$mon+1,$mday,$hour,$min,$sec);
 }
 
 ####################################################################################################################################
@@ -657,7 +670,7 @@ my $bDone = false;
 my $strNextLogFile = nextLogFile($strLogPath);
 
 # Open log file
-open(my $hLog, '>', $strLogOutFile)
+open(my $hLog, '>>', $strLogOutFile)
     or confess "unable to open pgAudit Analyze log file $strLogOutFile: $!";
 
 # Daemonize the process
@@ -697,7 +710,7 @@ while(!$bDone)
             $strLogFile = $strNextLogFile;
             undef($strNextLogFile);
 
-            syswrite($hLog, "reading ${strLogFile}\n");
+            syswrite($hLog, timestampGet() . ": reading ${strLogFile}\n");
 
             # Read updating file
             # http://stackoverflow.com/questions/1425223/how-do-i-read-a-file-which-is-constantly-updating
@@ -708,6 +721,12 @@ while(!$bDone)
             # Read the log file
             $oLogCSV = new PgAudit::CSV({binary => 1, empty_is_undef => 1});
         }
+
+        # Perl 5.36 fixed an issue where you could continue reading a file that was being appended to after hitting EOF, see:
+        # https://groups.google.com/g/linux.debian.bugs.dist/c/ZaxLI8YufO8. Therefore we must seek to the current location to
+        # continue reading if the log is being appended to.
+        seek($hFile, 0, 1)
+            or confess "unable to seek to current position in ${strLogPath}/${strLogFile}";
 
         # Parse all rows in the file into CSV
         while (my $stryRow = $oLogCSV->getline($hFile))
@@ -746,7 +765,7 @@ while(!$bDone)
     {
         my $strMessage = $@;
 
-        syswrite($hLog, "$@\n");
+        syswrite($hLog, timestampGet() . ": $@\n");
         sleep(5);
 
         # Reset everything and start again
