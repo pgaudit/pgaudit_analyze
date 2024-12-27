@@ -106,6 +106,16 @@ use constant
     STATE_ERROR => 'error'
 };
 
+####################################################################################################################################
+# Authentication errors that appear as type "LOG" before the type "FATAL" msg is recorded
+####################################################################################################################################
+my @AUTH_ERRORS = (
+    'pam_authenticate failed:',
+    'error from underlying PAM layer:',
+    'could not connect to Ident server at address'
+);
+
+
 use constant
 {
     true    => 1,
@@ -318,6 +328,7 @@ sub sessionGet
     my $strConnectionFrom = shift;
     my $strCommandTag = shift;
     my $strErrorSeverity = shift;
+    my $strMessage = shift;
 
     # Set connection from to a default if not defined yet
     if (!defined($strApplicationName))
@@ -336,7 +347,8 @@ sub sessionGet
 
     # Set state to ERROR on authentication failure
     if (defined($strCommandTag) && lc($strCommandTag) eq COMMAND_TAG_AUTHENTICATION &&
-        defined($strErrorSeverity) && lc($strErrorSeverity) eq ERROR_SEVERITY_FATAL)
+        ( (defined($strErrorSeverity) && lc($strErrorSeverity) eq ERROR_SEVERITY_FATAL) ||
+          (defined($strMessage) && grep {$strMessage =~ /^$_/} @AUTH_ERRORS )))
     {
         $strState = STATE_ERROR;
     }
@@ -716,7 +728,7 @@ while(!$bDone)
             {
                 sessionGet($strSessionId, $lSessionLineNum, $$stryRow[LOG_FIELD_PROCESS_ID], $$stryRow[LOG_FIELD_SESSION_START_TIME],
                            $strUserName, $strDatabaseName, $$stryRow[LOG_FIELD_APPLICATION_NAME], $$stryRow[LOG_FIELD_CONNECTION_FROM],
-                           $$stryRow[LOG_FIELD_COMMAND_TAG], $$stryRow[LOG_FIELD_ERROR_SEVERITY]);
+                           $$stryRow[LOG_FIELD_COMMAND_TAG], $$stryRow[LOG_FIELD_ERROR_SEVERITY], $$stryRow[LOG_FIELD_MESSAGE]);
 
                 logWrite($strSessionId, $strDatabaseName, $$stryRow[LOG_FIELD_LOG_TIME], $lSessionLineNum,
                          defined($$stryRow[LOG_FIELD_COMMAND_TAG]) ? lc($$stryRow[LOG_FIELD_COMMAND_TAG]) : undef,
