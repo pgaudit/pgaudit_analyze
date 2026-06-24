@@ -59,3 +59,9 @@ jobs:
 
       - name: Run PG 17 Test
         run: docker run -v ${GITHUB_WORKSPACE?}/pgaudit-analyze:/pgaudit-analyze pgaudit-analyze-test /pgaudit-analyze/test/test.pl --pgsql-bin=/usr/lib/postgresql/17/bin
+
+      - name: Run PG 18 Test
+        run: docker run -v ${GITHUB_WORKSPACE?}/pgaudit-analyze:/pgaudit-analyze pgaudit-analyze-test /pgaudit-analyze/test/test.pl --pgsql-bin=/usr/lib/postgresql/17/bin
+
+      - name: Run PG 19 Test
+        run: docker run -v ${GITHUB_WORKSPACE?}/pgaudit-analyze:/pgaudit-analyze pgaudit-analyze-test /pgaudit-analyze/test/test.pl --pgsql-bin=/usr/lib/postgresql/17/bin

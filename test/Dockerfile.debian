@@ -1,4 +1,4 @@
-FROM ubuntu:focal
+FROM ubuntu:noble
 
 # User and group id
 ARG UID=1000
@@ -12,13 +12,12 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wget gnupg tzdata locales 
 RUN groupadd -g $GID -o postgres
 RUN useradd -m -u $UID -g $GID -o -s /bin/bash postgres
 
-# Install PostgreSQL
-RUN RELEASE_CODENAME=`lsb_release -c | awk '{print $2}'` && \
-    echo 'deb http://apt.postgresql.org/pub/repos/apt/ '${RELEASE_CODENAME?}'-pgdg main' | \
-        tee -a /etc/apt/sources.list.d/pgdg.list
-RUN APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 && \
-    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+# Add PostgreSQL repository
+RUN apt-get install -y --no-install-recommends postgresql-common
+RUN /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y -c 19
 RUN apt-get update
+
+# Install PostgreSQL
 RUN apt-get install -y make gcc libssl-dev libkrb5-dev
 RUN apt-get install -y postgresql-9.5 postgresql-server-dev-9.5
 RUN apt-get install -y postgresql-9.6 postgresql-server-dev-9.6
@@ -30,6 +29,8 @@ RUN apt-get install -y postgresql-14 postgresql-server-dev-14
 RUN apt-get install -y postgresql-15 postgresql-server-dev-15
 RUN apt-get install -y postgresql-16 postgresql-server-dev-16
 RUN apt-get install -y postgresql-17 postgresql-server-dev-17
+RUN apt-get install -y postgresql-18 postgresql-server-dev-18
+RUN apt-get install -y postgresql-19 postgresql-server-dev-19
 
 # Install Perl packages
 RUN apt-get install -y libdbd-pg-perl libipc-system-simple-perl libterm-readkey-perl
@@ -50,7 +51,7 @@ RUN make -C /root/pgaudit/11 install USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/11
 RUN git clone https://github.com/pgaudit/pgaudit.git -b unsupported/REL_12_STABLE /root/pgaudit/12
 RUN make -C /root/pgaudit/12 install USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/12/bin/pg_config
 
-RUN git clone https://github.com/pgaudit/pgaudit.git -b REL_13_STABLE /root/pgaudit/13
+RUN git clone https://github.com/pgaudit/pgaudit.git -b unsupported/REL_13_STABLE /root/pgaudit/13
 RUN make -C /root/pgaudit/13 install USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/13/bin/pg_config
 
 RUN git clone https://github.com/pgaudit/pgaudit.git -b REL_14_STABLE /root/pgaudit/14
@@ -64,6 +65,12 @@ RUN make -C /root/pgaudit/16 install USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/16
 
 RUN git clone https://github.com/pgaudit/pgaudit.git -b REL_17_STABLE /root/pgaudit/17
 RUN make -C /root/pgaudit/17 install USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/17/bin/pg_config
+
+RUN git clone https://github.com/pgaudit/pgaudit.git -b REL_18_STABLE /root/pgaudit/18
+RUN make -C /root/pgaudit/18 install USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/18/bin/pg_config
+
+RUN git clone https://github.com/pgaudit/pgaudit.git -b REL_19_STABLE /root/pgaudit/19
+RUN make -C /root/pgaudit/19 install USE_PGXS=1 PG_CONFIG=/usr/lib/postgresql/19/bin/pg_config
 
 USER postgres
 WORKDIR /var/lib/postgresql
