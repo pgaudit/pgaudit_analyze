@@ -33,6 +33,7 @@ pgaudit_analyze [options] <pg-log-path>
    --socket-path        PostgreSQL host or socket directory (default to system default directory)
    --log-file           location of the log file for pgaudit_analyze (defaults to /var/log/pgaudit_analyze.log)
    --user               specify postgres user instead of using pgaudit_analyze invoker
+   --cluster-name       identifier to use if logging from multiple clusters (ie several replicas to one primary)
 
  General Options:
    --help               display usage and exit
@@ -121,14 +122,15 @@ my $iPort = 5432;
 my $strSocketPath;
 my $strLogOutFile = '/var/log/pgaudit_analyze.log';
 my $strDbUser = getpwuid($<);
-
+my $strClusterName;
 
 GetOptions ('help' => \$bHelp,
             'daemon' => \$bDaemon,
             'port=s' => \$iPort,
             'socket-path=s' => \$strSocketPath,
             'log-file=s' => \$strLogOutFile,
-            'user=s' => \$strDbUser)
+            'user=s' => \$strDbUser,
+            'cluster-name=s' => \$strClusterName)
     or pod2usage(2);
 
 # Display version and exit if requested
@@ -297,7 +299,58 @@ sub databaseGet
         "                                               audit_type, class, command, object_type, object_name)\n" .
         "                                       values (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
+    $oDbHash{$strDatabaseName}{hSqlClusterExists} = $oDbHash{$strDatabaseName}{hDb}->prepare(
+        "select 1 FROM pg_tables WHERE schemaname = 'pgaudit' AND tablename='cluster'" );
+
+    $oDbHash{$strDatabaseName}{hSqlClusterSelect} = $oDbHash{$strDatabaseName}{hDb}->prepare(
+        "select cluster_id \n" .
+        "from pgaudit.cluster \n" .
+        "where cluster_name = ?");
+
+    $oDbHash{$strDatabaseName}{hSqlClusterInsert} = $oDbHash{$strDatabaseName}{hDb}->prepare(
+        "insert into pgaudit.cluster (cluster_name) \n" .
+                             "values (?)");
     return true;
+}
+
+####################################################################################################################################
+# clusterCheck
+####################################################################################################################################
+my %oClusterHash;
+
+sub clusterCheck
+{
+    my $strSessionId = shift;
+    my $strDatabaseName = shift;
+    if ($strClusterName) 
+    {
+        if (!defined $oClusterHash{$strClusterName}) {
+            if (!defined $oClusterHash{$strClusterName}) 
+            {
+                if ($oDbHash{$strDatabaseName}{hSqlClusterExists}->execute() &&
+                    $oDbHash{$strDatabaseName}{hSqlClusterExists}->fetchrow_array()) 
+                { 
+                    $oDbHash{$strDatabaseName}{hSqlClusterSelect}->execute($strClusterName);
+                    ($oClusterHash{$strClusterName}) = $oDbHash{$strDatabaseName}{hSqlClusterSelect}->fetchrow_array();
+                    if (!defined $oClusterHash{$strClusterName})
+                    {
+                        print("Insert cluster_name '$strClusterName'\n");
+                        $oDbHash{$strDatabaseName}{hSqlClusterInsert}->execute($strClusterName);
+                        $oDbHash{$strDatabaseName}{hSqlClusterSelect}->execute($strClusterName);
+                        ($oClusterHash{$strClusterName}) = $oDbHash{$strDatabaseName}{hSqlClusterSelect}->fetchrow_array();
+                    }
+                }
+                else
+                {#for backwards compatibilty for older pgaudit schema
+                    print("Appears to be older version of schema, using cluster name '$strClusterName' as identifier in session_id\n");
+                    # prepend '_' so will never collide with cluster_id if schema is upgraded in future
+                    $oClusterHash{$strClusterName} = "_$strClusterName";
+                }
+            }
+        }
+        $strSessionId .= "." . $oClusterHash{$strClusterName};
+    }
+    return $strSessionId;
 }
 
 ####################################################################################################################################
@@ -711,6 +764,7 @@ while(!$bDone)
 
             if (defined($strUserName) && $strAuditUserName ne $strUserName &&
                 defined($strDatabaseName) && databaseGet($strDatabaseName) &&
+                ($strSessionId = clusterCheck($strSessionId, $strDatabaseName)) &&
                 (!defined($oSessionHash{$strSessionId}) || !defined($oSessionHash{$strSessionId}{session_line_num}) ||
                  $lSessionLineNum > $oSessionHash{$strSessionId}{session_line_num}))
             {
