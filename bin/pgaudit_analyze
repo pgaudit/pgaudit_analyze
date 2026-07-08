@@ -20,6 +20,9 @@ use lib dirname($0) . '/../lib';
 use PgAudit::CSV;
 use PgAudit::Wait;
 
+# Flush the output buffer. $| is named $OUTPUT_AUTOFLUSH in English.pm.
+$|++;
+
 ####################################################################################################################################
 # Usage
 ####################################################################################################################################
@@ -597,11 +600,9 @@ sub daemonInit
     chdir '/'
         or confess "chdir() failed: $!";
 
-    # Close stdin/stdout/stderr
+    # Close stdin and stderr. stdout previously closed/redirected.
     open STDIN, '<', '/dev/null'
         or confess "Couldn't close standard input: $!";
-    open STDOUT, '>', $strLogOutFile
-        or confess "Couldn't close standard output: $!";
     open STDERR, '<', '/dev/null'
         or confess "Couldn't close standard error: $!";
 
@@ -645,6 +646,10 @@ my $strNextLogFile = nextLogFile($strLogPath);
 # Open log file
 open(my $hLog, '>>', $strLogOutFile)
     or confess "unable to open pgAudit Analyze log file $strLogOutFile: $!";
+
+# Redirect stdout to log file
+open(STDOUT, '>&', $hLog)
+    or confess "unable to close standard output and redirect to log file: $!";
 
 # Daemonize the process
 daemonInit()
